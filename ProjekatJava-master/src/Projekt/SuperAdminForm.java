@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
 
 public class SuperAdminForm extends ValidityCheck{
     private JTable PrikazTabela;
@@ -16,6 +17,9 @@ public class SuperAdminForm extends ValidityCheck{
     private JButton izbrisiButton;
     private JButton azurirajButton;
     private JButton prikaziPlateButton;
+    private JButton statusZalbeButton;
+    private JButton prikaziZalbuButton;
+    private JButton napisiZalbuButton;
     private Connection connection;
     private DefaultTableModel tableModel;
 
@@ -44,6 +48,12 @@ public class SuperAdminForm extends ValidityCheck{
         // Akcija za ažuriranje korisnika
         azurirajButton.addActionListener(e -> updateUser());
 
+        napisiZalbuButton.addActionListener(e-> writeComplaint());
+
+        prikaziZalbuButton.addActionListener(e-> showComplaint());
+
+        statusZalbeButton.addActionListener(e-> statusComplaint());
+
         prikaziPlateButton.addActionListener(e -> {
             int selectedRow = PrikazTabela.getSelectedRow();
             selectedUser(selectedRow);
@@ -59,7 +69,8 @@ public class SuperAdminForm extends ValidityCheck{
 
             // Modifikovani upit da filtrira samo korisnike sa ulogom 'employee'
             String query = "SELECT k.id, k.username, k.email, k.role, d.fullName, d.salary " +
-                    "FROM korisnici k JOIN korisnik_details d ON k.id = d.korisnik_id ";
+                    "FROM korisnici k JOIN korisnik_details d ON k.id = d.korisnik_id " +
+                    "WHERE k.role != 'superadmin'";
 
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(query);
@@ -272,6 +283,144 @@ public class SuperAdminForm extends ValidityCheck{
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja historije plata.");
         }
+    }
+
+    private void writeComplaint(){
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+        String complaintText = JOptionPane.showInputDialog("Unesite žalbu:");
+
+        if (complaintText != null && !complaintText.isEmpty()) {
+            try {
+                String insertComplaint = "INSERT INTO korisnik_zalbe (korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";
+                PreparedStatement psComplaint = connection.prepareStatement(insertComplaint);
+                psComplaint.setInt(1, korisnikId);
+                psComplaint.setString(2, complaintText);
+                psComplaint.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
+                psComplaint.setString(4, "u obradi");  // Početni status žalbe
+                psComplaint.executeUpdate();
+                psComplaint.close();
+
+                JOptionPane.showMessageDialog(panel1, "Žalba uspješno dodana.");
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(panel1, "Greška prilikom dodavanja žalbe.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(panel1, "Žalba ne može biti prazna.");
+        }
+
+    }
+
+    private void showComplaint(){
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+        try {
+            String query = "SELECT id, complaint_text, complaint_date, status FROM korisnik_zalbe WHERE korisnik_id = ?";
+            PreparedStatement psComplaints = connection.prepareStatement(query);
+            psComplaints.setInt(1, korisnikId);
+
+            ResultSet rs = psComplaints.executeQuery();
+
+            DefaultTableModel complaintModel = new DefaultTableModel();
+            complaintModel.addColumn("ID");
+            complaintModel.addColumn("Žalba");
+            complaintModel.addColumn("Datum");
+            complaintModel.addColumn("Status");
+
+            while (rs.next()) {
+                complaintModel.addRow(new Object[]{
+                        rs.getInt("id"),
+                        rs.getString("complaint_text"),
+                        rs.getDate("complaint_date"),
+                        rs.getString("status")
+                });
+            }
+
+            JTable complaintsTable = new JTable(complaintModel);
+
+            // Prilagodba širine stupaca
+            complaintsTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
+            complaintsTable.getColumnModel().getColumn(1).setPreferredWidth(300); // Žalba
+            complaintsTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Datum
+            complaintsTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Status
+
+            JScrollPane scrollPane = new JScrollPane(complaintsTable);
+
+
+            JOptionPane.showMessageDialog(panel1, scrollPane, "Lista Žalbi", JOptionPane.INFORMATION_MESSAGE);
+
+            rs.close();
+            psComplaints.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja žalbi.");
+        }
+    }
+
+    private void statusComplaint() {
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+
+        try {
+            // Učitavanje žalbi za odabranog korisnika
+            String query = "SELECT id, complaint_text, status FROM korisnik_zalbe WHERE korisnik_id = ?";
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setInt(1, korisnikId);
+
+            ResultSet rs = ps.executeQuery();
+
+            DefaultTableModel complaintModel = new DefaultTableModel();
+            complaintModel.addColumn("ID");
+            complaintModel.addColumn("Žalba");
+            complaintModel.addColumn("Status");
+
+            while (rs.next()) {
+                complaintModel.addRow(new Object[]{
+                        rs.getInt("id"),
+                        rs.getString("complaint_text"),
+                        rs.getString("status")
+                });
+            }
+
+            JTable complaintsTable = new JTable(complaintModel);
+
+            JScrollPane scrollPane = new JScrollPane(complaintsTable);
+            int option = JOptionPane.showConfirmDialog(panel1, scrollPane, "Odaberite žalbu za ažuriranje statusa", JOptionPane.OK_CANCEL_OPTION);
+
+            if (option == JOptionPane.OK_OPTION) {
+                int selectedComplaintRow = complaintsTable.getSelectedRow();
+                if (selectedComplaintRow < 0) {
+                    JOptionPane.showMessageDialog(panel1, "Molimo odaberite žalbu iz tabele.");
+                    return;
+                }
+
+                int complaintId = (int) complaintModel.getValueAt(selectedComplaintRow, 0);
+                String updateQuery = "UPDATE korisnik_zalbe SET status = ? WHERE id = ?";
+                PreparedStatement psUpdate = connection.prepareStatement(updateQuery);
+                psUpdate.setString(1, "završeno"); // Novi status
+                psUpdate.setInt(2, complaintId);
+
+                int rowsUpdated = psUpdate.executeUpdate();
+                if (rowsUpdated > 0) {
+                    JOptionPane.showMessageDialog(panel1, "Status žalbe je uspješno ažuriran na 'završeno'.");
+                } else {
+                    JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
+                }
+
+                psUpdate.close();
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
+        }
+
     }
 
     public void showForm() {

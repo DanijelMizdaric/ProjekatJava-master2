@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="Projekt.ManagerForm">
-  <grid id="27dc6" binding="panel1" default-binding="true" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="panel1" default-binding="true" layout-manager="GridLayoutManager" row-count="10" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="500" height="400"/>
@@ -23,7 +23,7 @@
       </vspacer>
       <component id="716e9" class="javax.swing.JButton" binding="nazadButton" default-binding="true">
         <constraints>
-          <grid row="4" column="0" row-span="3" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="7" column="0" row-span="3" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Nazad"/>
@@ -39,7 +39,7 @@
       </component>
       <component id="ac93" class="javax.swing.JButton" binding="dodajButton" default-binding="true">
         <constraints>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Dodaj"/>
@@ -47,7 +47,7 @@
       </component>
       <component id="4a76f" class="javax.swing.JButton" binding="izbrisiButton" default-binding="true">
         <constraints>
-          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Izbrisi"/>
@@ -55,7 +55,7 @@
       </component>
       <component id="72617" class="javax.swing.JButton" binding="azurirajButton" default-binding="true">
         <constraints>
-          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Azuriraj"/>
@@ -63,10 +63,34 @@
       </component>
       <component id="46775" class="javax.swing.JButton" binding="prikazPlateButton" default-binding="true">
         <constraints>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Prikaz Plate"/>
+        </properties>
+      </component>
+      <component id="796a" class="javax.swing.JButton" binding="napisiZalbuButton" default-binding="true">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Napisi Zalbu"/>
+        </properties>
+      </component>
+      <component id="645e3" class="javax.swing.JButton" binding="prikaziZalbuButton" default-binding="true">
+        <constraints>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Prikazi Zalbu"/>
+        </properties>
+      </component>
+      <component id="3f12" class="javax.swing.JButton" binding="statusZalbeButton" default-binding="true">
+        <constraints>
+          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Status Zalbe"/>
         </properties>
       </component>
     </children>

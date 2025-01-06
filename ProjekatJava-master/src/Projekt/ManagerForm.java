@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+
 public class ManagerForm extends ValidityCheck{
     private JTable PrikazTabela;
     private JPanel panel1;
@@ -14,6 +16,9 @@ public class ManagerForm extends ValidityCheck{
     private JButton izbrisiButton;
     private JButton azurirajButton;
     private JButton prikazPlateButton;
+    private JButton napisiZalbuButton;
+    private JButton prikaziZalbuButton;
+    private JButton statusZalbeButton;
     private Connection connection;
     private DefaultTableModel tableModel;
     public ManagerForm(){
@@ -40,6 +45,12 @@ public class ManagerForm extends ValidityCheck{
 
         // Akcija za ažuriranje korisnika
         azurirajButton.addActionListener(e -> updateUser());
+
+        napisiZalbuButton.addActionListener(e-> writeComplaint());
+
+        prikaziZalbuButton.addActionListener(e-> showComplaint());
+
+        statusZalbeButton.addActionListener(e->statusComplaint());
 
         prikazPlateButton.addActionListener(e -> {
             int selectedRow = PrikazTabela.getSelectedRow();
@@ -171,10 +182,6 @@ public class ManagerForm extends ValidityCheck{
         int id = (int) tableModel.getValueAt(selectedRow, 0);
         String newUsername = JOptionPane.showInputDialog("Unesite novi username:", tableModel.getValueAt(selectedRow, 1));
 
-        JPasswordField newPasswordField = new JPasswordField();
-        JOptionPane.showMessageDialog(null, newPasswordField, "Unesite novi password:", JOptionPane.PLAIN_MESSAGE);
-        String newPassword = new String(newPasswordField.getPassword());
-
         String newEmail = JOptionPane.showInputDialog("Unesite novi email:", tableModel.getValueAt(selectedRow, 2));
         String newRole = JOptionPane.showInputDialog("Unesite novu ulogu (Employee, Manager):", tableModel.getValueAt(selectedRow, 3));
         String newFullName = JOptionPane.showInputDialog("Unesite novo puno ime:", tableModel.getValueAt(selectedRow, 4));
@@ -195,10 +202,6 @@ public class ManagerForm extends ValidityCheck{
             JOptionPane.showMessageDialog(panel1, "Uneseni e-mail nije validan.");
             return;
         }
-        if (newPassword.isEmpty()) {
-            JOptionPane.showMessageDialog(panel1, "Password ne smije biti prazan.");
-            return;
-        }
 
         try {
             double newSalary = Double.parseDouble(salaryStr);
@@ -207,6 +210,18 @@ public class ManagerForm extends ValidityCheck{
             String updateKorisnici = "UPDATE korisnici SET username = ?, email = ?, role = ?, password = ? WHERE id = ?";
             String updateDetails = "UPDATE korisnik_details SET fullName = ?, salary = ? WHERE korisnik_id = ?";
             String plataChange = "INSERT INTO historija_plata (korisnik_id, old_salary, new_salary) VALUES (?, ?, ?)";
+
+            String currentPasswordQuery = "SELECT password FROM korisnici WHERE id = ?";
+            PreparedStatement psPassword = connection.prepareStatement(currentPasswordQuery);
+            psPassword.setInt(1, id);
+            ResultSet rs = psPassword.executeQuery();
+            String currentPassword = null;
+
+            if (rs.next()) {
+                currentPassword = rs.getString("password");
+            }
+            rs.close();
+            psPassword.close();
 
             PreparedStatement psPlata = connection.prepareStatement(plataChange);
             psPlata.setInt(1, id);
@@ -219,7 +234,7 @@ public class ManagerForm extends ValidityCheck{
             psKorisnici.setString(1, newUsername);
             psKorisnici.setString(2, newEmail);
             psKorisnici.setString(3, newRole);
-            psKorisnici.setString(4, newPassword);
+            psKorisnici.setString(4,currentPassword);
             psKorisnici.setInt(5, id);
             psKorisnici.executeUpdate();
 
@@ -241,6 +256,146 @@ public class ManagerForm extends ValidityCheck{
             JOptionPane.showMessageDialog(panel1, "Plata mora biti broj.");
         }
     }
+
+    private void writeComplaint(){
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+        String complaintText = JOptionPane.showInputDialog("Unesite žalbu:");
+
+        if (complaintText != null && !complaintText.isEmpty()) {
+            try {
+                String insertComplaint = "INSERT INTO korisnik_zalbe (korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";
+                PreparedStatement psComplaint = connection.prepareStatement(insertComplaint);
+                psComplaint.setInt(1, korisnikId);
+                psComplaint.setString(2, complaintText);
+                psComplaint.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
+                psComplaint.setString(4, "u obradi");  // Početni status žalbe
+                psComplaint.executeUpdate();
+                psComplaint.close();
+
+                JOptionPane.showMessageDialog(panel1, "Žalba uspješno dodana.");
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(panel1, "Greška prilikom dodavanja žalbe.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(panel1, "Žalba ne može biti prazna.");
+        }
+
+    }
+
+    private void showComplaint(){
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+        try {
+            String query = "SELECT id, complaint_text, complaint_date, status FROM korisnik_zalbe WHERE korisnik_id = ?";
+            PreparedStatement psComplaints = connection.prepareStatement(query);
+            psComplaints.setInt(1, korisnikId);
+
+            ResultSet rs = psComplaints.executeQuery();
+
+            DefaultTableModel complaintModel = new DefaultTableModel();
+            complaintModel.addColumn("ID");
+            complaintModel.addColumn("Žalba");
+            complaintModel.addColumn("Datum");
+            complaintModel.addColumn("Status");
+
+            while (rs.next()) {
+                complaintModel.addRow(new Object[]{
+                        rs.getInt("id"),
+                        rs.getString("complaint_text"),
+                        rs.getDate("complaint_date"),
+                        rs.getString("status")
+                });
+            }
+
+            JTable complaintsTable = new JTable(complaintModel);
+
+            // Prilagodba širine stupaca
+            complaintsTable.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
+            complaintsTable.getColumnModel().getColumn(1).setPreferredWidth(300); // Žalba
+            complaintsTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Datum
+            complaintsTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Status
+
+            JScrollPane scrollPane = new JScrollPane(complaintsTable);
+
+
+            JOptionPane.showMessageDialog(panel1, scrollPane, "Lista Žalbi", JOptionPane.INFORMATION_MESSAGE);
+
+            rs.close();
+            psComplaints.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja žalbi.");
+        }
+    }
+
+    private void statusComplaint() {
+        int selectedRow = PrikazTabela.getSelectedRow();
+        selectedUser(selectedRow);
+        int korisnikId = (int) tableModel.getValueAt(selectedRow, 0);
+
+        try {
+            // Učitavanje žalbi za odabranog korisnika
+            String query = "SELECT id, complaint_text, status FROM korisnik_zalbe WHERE korisnik_id = ?";
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setInt(1, korisnikId);
+
+            ResultSet rs = ps.executeQuery();
+
+            DefaultTableModel complaintModel = new DefaultTableModel();
+            complaintModel.addColumn("ID");
+            complaintModel.addColumn("Žalba");
+            complaintModel.addColumn("Status");
+
+            while (rs.next()) {
+                complaintModel.addRow(new Object[]{
+                        rs.getInt("id"),
+                        rs.getString("complaint_text"),
+                        rs.getString("status")
+                });
+            }
+
+            JTable complaintsTable = new JTable(complaintModel);
+
+            JScrollPane scrollPane = new JScrollPane(complaintsTable);
+            int option = JOptionPane.showConfirmDialog(panel1, scrollPane, "Odaberite žalbu za ažuriranje statusa", JOptionPane.OK_CANCEL_OPTION);
+
+            if (option == JOptionPane.OK_OPTION) {
+                int selectedComplaintRow = complaintsTable.getSelectedRow();
+                if (selectedComplaintRow < 0) {
+                    JOptionPane.showMessageDialog(panel1, "Molimo odaberite žalbu iz tabele.");
+                    return;
+                }
+
+                int complaintId = (int) complaintModel.getValueAt(selectedComplaintRow, 0);
+                String updateQuery = "UPDATE korisnik_zalbe SET status = ? WHERE id = ?";
+                PreparedStatement psUpdate = connection.prepareStatement(updateQuery);
+                psUpdate.setString(1, "završeno"); // Novi status
+                psUpdate.setInt(2, complaintId);
+
+                int rowsUpdated = psUpdate.executeUpdate();
+                if (rowsUpdated > 0) {
+                    JOptionPane.showMessageDialog(panel1, "Status žalbe je uspješno ažuriran na 'završeno'.");
+                } else {
+                    JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
+                }
+
+                psUpdate.close();
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
+        }
+
+    }
+
+
 
     private void showSalaryHistory(int korisnikId) {
         try {
