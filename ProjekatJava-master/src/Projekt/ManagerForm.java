@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.text.ParseException;
 
 public class ManagerForm extends ValidityCheck{
     private JTable PrikazTabela;
@@ -21,8 +22,9 @@ public class ManagerForm extends ValidityCheck{
     private JButton statusZalbeButton;
     private Connection connection;
     private DefaultTableModel tableModel;
-    public ManagerForm(){
-
+    private String loggedInUsername;
+    public ManagerForm(String username){
+        this.loggedInUsername= username;
         tableModel = new DefaultTableModel(new String[]{"ID", "Username", "Email", "Role", "Full Name", "Salary"}, 0);
         PrikazTabela.setModel(tableModel);
 
@@ -63,14 +65,17 @@ public class ManagerForm extends ValidityCheck{
         try {
             connection = DriverManager.getConnection(
                     "jdbc:mysql://127.0.0.1:3306/hrms", "root", "Benswolo#1");
-
-            // Modifikovani upit da filtrira samo korisnike sa ulogom 'employee'
             String query = "SELECT k.id, k.username, k.email, k.role, d.fullName, d.salary " +
-                    "FROM korisnici k JOIN korisnik_details d ON k.id = d.korisnik_id " +
-                    "WHERE k.role = 'employee'"; // Filtriranje samo korisnika sa ulogom 'employee'
+                    "FROM korisnici k " +
+                    "JOIN korisnik_details d ON k.id = d.korisnik_id " +
+                    "WHERE k.role = 'employee' AND k.project = (SELECT project FROM korisnici WHERE username = ? AND role = 'manager')";
 
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
+
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, loggedInUsername); // Replace with actual manager's username
+
+            // Execute the query
+            ResultSet resultSet = ps.executeQuery();
 
             tableModel.setRowCount(0); // Resetovanje tabele
             while (resultSet.next()) {
@@ -85,7 +90,7 @@ public class ManagerForm extends ValidityCheck{
             }
 
             resultSet.close();
-            statement.close();
+            ps.close();
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja podataka.");
@@ -95,6 +100,7 @@ public class ManagerForm extends ValidityCheck{
     private void addUser() {
         String username = JOptionPane.showInputDialog("Unesite username:");
         String email = JOptionPane.showInputDialog("Unesite email:");
+        String project =JOptionPane.showInputDialog("Unesite projekat:");
 
         JPasswordField passwordField = new JPasswordField();
         JOptionPane.showMessageDialog(null, passwordField, "Unesite password:", JOptionPane.PLAIN_MESSAGE);
@@ -119,9 +125,11 @@ public class ManagerForm extends ValidityCheck{
         }
 
         try {
-            double salary = Double.parseDouble(salaryStr);
+            NumberFormat format = NumberFormat.getInstance();
+            Number number = format.parse(salaryStr);
+            double salary = number.doubleValue();
 
-            String insertKorisnici = "INSERT INTO korisnici (username, email, password, role) VALUES (?, ?, ?, ?)";
+            String insertKorisnici = "INSERT INTO korisnici (username, email, password, role, project) VALUES (?, ?, ?, ?, ?)";
             String insertDetails = "INSERT INTO korisnik_details (korisnik_id, fullName, salary) VALUES (LAST_INSERT_ID(), ?, ?)";
 
             PreparedStatement psKorisnici = connection.prepareStatement(insertKorisnici);
@@ -129,6 +137,7 @@ public class ManagerForm extends ValidityCheck{
             psKorisnici.setString(2, email);
             psKorisnici.setString(3, password);
             psKorisnici.setString(4, role);
+            psKorisnici.setString(5, project);
             psKorisnici.executeUpdate();
 
             PreparedStatement psDetails = connection.prepareStatement(insertDetails);
@@ -144,6 +153,8 @@ public class ManagerForm extends ValidityCheck{
         } catch (SQLException | NumberFormatException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom dodavanja korisnika.");
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -183,7 +194,8 @@ public class ManagerForm extends ValidityCheck{
         String newUsername = JOptionPane.showInputDialog("Unesite novi username:", tableModel.getValueAt(selectedRow, 1));
 
         String newEmail = JOptionPane.showInputDialog("Unesite novi email:", tableModel.getValueAt(selectedRow, 2));
-        String newRole = JOptionPane.showInputDialog("Unesite novu ulogu (Employee, Manager):", tableModel.getValueAt(selectedRow, 3));
+        String newRole = JOptionPane.showInputDialog("Unesite novu ulogu (Employee, Manager):",
+                tableModel.getValueAt(selectedRow, 3));
         String newFullName = JOptionPane.showInputDialog("Unesite novo puno ime:", tableModel.getValueAt(selectedRow, 4));
 
         // Polje za unos plate sa validacijom samo brojeva
@@ -265,7 +277,8 @@ public class ManagerForm extends ValidityCheck{
 
         if (complaintText != null && !complaintText.isEmpty()) {
             try {
-                String insertComplaint = "INSERT INTO korisnik_zalbe (korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";
+                String insertComplaint = "INSERT INTO korisnik_zalbe " +
+                        "(korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";
                 PreparedStatement psComplaint = connection.prepareStatement(insertComplaint);
                 psComplaint.setInt(1, korisnikId);
                 psComplaint.setString(2, complaintText);
@@ -361,7 +374,8 @@ public class ManagerForm extends ValidityCheck{
             JTable complaintsTable = new JTable(complaintModel);
 
             JScrollPane scrollPane = new JScrollPane(complaintsTable);
-            int option = JOptionPane.showConfirmDialog(panel1, scrollPane, "Odaberite žalbu za ažuriranje statusa", JOptionPane.OK_CANCEL_OPTION);
+            int option = JOptionPane.showConfirmDialog(panel1, scrollPane, "Odaberite žalbu za ažuriranje statusa",
+                    JOptionPane.OK_CANCEL_OPTION);
 
             if (option == JOptionPane.OK_OPTION) {
                 int selectedComplaintRow = complaintsTable.getSelectedRow();

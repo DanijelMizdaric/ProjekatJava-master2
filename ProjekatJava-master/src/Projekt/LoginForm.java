@@ -37,7 +37,7 @@ public class LoginForm {
                         if (role.equals("Employee")) {
                             new KorisnikForm(username).showForm();
                         } else if (role.equals("Manager")) {
-                            new ManagerForm().showForm();
+                            new ManagerForm(username).showForm();
                         } else if (role.equals("SuperAdmin")) {
                             new SuperAdminForm().showForm();
                         } else {
