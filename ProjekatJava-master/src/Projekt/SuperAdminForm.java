@@ -22,9 +22,10 @@ public class SuperAdminForm extends ValidityCheck{
     private JButton napisiZalbuButton;
     private Connection connection;
     private DefaultTableModel tableModel;
+    private String loggedInUsername;
 
-
-    public SuperAdminForm() {
+    public SuperAdminForm(String username) {
+        this.loggedInUsername=username;
         tableModel = new DefaultTableModel(new String[]{"ID", "Username", "Email", "Role", "Full Name", "Salary"}, 0);
         PrikazTabela.setModel(tableModel);
 
@@ -95,63 +96,10 @@ public class SuperAdminForm extends ValidityCheck{
         }
     }
     private void addUser() {
-        String username = JOptionPane.showInputDialog("Unesite username:");
-        String email = JOptionPane.showInputDialog("Unesite email:");
-
-        JPasswordField passwordField = new JPasswordField();
-        JOptionPane.showMessageDialog(null, passwordField, "Unesite password:", JOptionPane.PLAIN_MESSAGE);
-        String password = new String(passwordField.getPassword());
-
-        String role = JOptionPane.showInputDialog("Unesite ulogu:");
-        String fullName = JOptionPane.showInputDialog("Unesite puno ime:");
-
-        NumberFormat numberFormat = NumberFormat.getNumberInstance();
-        JFormattedTextField salaryField = new JFormattedTextField(numberFormat);
-        salaryField.setValue(0);
-        JOptionPane.showMessageDialog(null, salaryField, "Unesite platu:", JOptionPane.PLAIN_MESSAGE);
-        String salaryStr = salaryField.getText();
-
-        if (!isRoleValid(role)) {
-            JOptionPane.showMessageDialog(panel1, "Unesena uloga nije validna.");
-            return;
-        }
-        if (!isEmailValid(email)) {
-            JOptionPane.showMessageDialog(panel1, "Uneseni E-mail nije validan.");
-            return;
-        }
-
-        try {
-            NumberFormat format = NumberFormat.getInstance();
-            Number number = format.parse(salaryStr);
-            double salary = number.doubleValue();
-
-
-            String insertKorisnici = "INSERT INTO korisnici (username, email, password, role) VALUES (?, ?, ?, ?)";
-            String insertDetails = "INSERT INTO korisnik_details (korisnik_id, fullName, salary) VALUES (LAST_INSERT_ID(), ?, ?)";
-
-            PreparedStatement psKorisnici = connection.prepareStatement(insertKorisnici);
-            psKorisnici.setString(1, username);
-            psKorisnici.setString(2, email);
-            psKorisnici.setString(3, password);
-            psKorisnici.setString(4, role);
-            psKorisnici.executeUpdate();
-
-            PreparedStatement psDetails = connection.prepareStatement(insertDetails);
-            psDetails.setString(1, fullName);
-            psDetails.setDouble(2, salary);
-            psDetails.executeUpdate();
-
-            psKorisnici.close();
-            psDetails.close();
-
-            JOptionPane.showMessageDialog(panel1, "Uspješno ste dodali korisnika!");
-            loadData();
-        } catch (SQLException | NumberFormatException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(panel1, "Greška prilikom dodavanja korisnika.");
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+    String employeeName = getSelectedEmployeeName();
+    new UnosZaSuperAdmina(loggedInUsername).showForm();
+        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
+        frame.dispose();
     }
     private void deleteUser() {
         int selectedRow = PrikazTabela.getSelectedRow();
@@ -180,83 +128,18 @@ public class SuperAdminForm extends ValidityCheck{
             JOptionPane.showMessageDialog(panel1, "Greška prilikom brisanja korisnika.");
         }
     }
+
     private void updateUser() {
-        int selectedRow = PrikazTabela.getSelectedRow();
-        selectedUser(selectedRow);
-
-        int id = (int) tableModel.getValueAt(selectedRow, 0);
-        String newUsername = JOptionPane.showInputDialog("Unesite novi username:", tableModel.getValueAt(selectedRow, 1));
-
-        JPasswordField newPasswordField = new JPasswordField();
-        JOptionPane.showMessageDialog(null, newPasswordField, "Unesite novi password:", JOptionPane.PLAIN_MESSAGE);
-        String newPassword = new String(newPasswordField.getPassword());
-
-        String newEmail = JOptionPane.showInputDialog("Unesite novi email:", tableModel.getValueAt(selectedRow, 2));
-        String newRole = JOptionPane.showInputDialog("Unesite novu ulogu (Employee, Manager):", tableModel.getValueAt(selectedRow, 3));
-        String newFullName = JOptionPane.showInputDialog("Unesite novo puno ime:", tableModel.getValueAt(selectedRow, 4));
-
-        // Polje za unos plate sa validacijom samo brojeva
-        NumberFormat numberFormat = NumberFormat.getNumberInstance();
-        JFormattedTextField salaryField = new JFormattedTextField(numberFormat);
-        salaryField.setValue(tableModel.getValueAt(selectedRow, 5)); // Trenutna plata
-        JOptionPane.showMessageDialog(null, salaryField, "Unesite novu platu:", JOptionPane.PLAIN_MESSAGE);
-        String salaryStr = salaryField.getText().replace(",", "");
-
-        // Validacija
-        if (!isRoleValid(newRole)) {
-            JOptionPane.showMessageDialog(panel1, "Unesena uloga nije validna. Dozvoljeno: Employee, Manager");
-            return;
-        }
-        if (!isEmailValid(newEmail)) {
-            JOptionPane.showMessageDialog(panel1, "Uneseni e-mail nije validan.");
-            return;
-        }
-        if (newPassword.isEmpty()) {
-            JOptionPane.showMessageDialog(panel1, "Password ne smije biti prazan.");
-            return;
-        }
-
-        try {
-            double newSalary = Double.parseDouble(salaryStr);
-            double oldSalary = (double) tableModel.getValueAt(selectedRow, 5);
-            // SQL upiti
-            String updateKorisnici = "UPDATE korisnici SET username = ?, email = ?, role = ?, password = ? WHERE id = ?";
-            String updateDetails = "UPDATE korisnik_details SET fullName = ?, salary = ? WHERE korisnik_id = ?";
-            String plataChange = "INSERT INTO historija_plata (korisnik_id, old_salary, new_salary) VALUES (?, ?, ?)";
-
-            PreparedStatement psPlata = connection.prepareStatement(plataChange);
-            psPlata.setInt(1, id);
-            psPlata.setDouble(2, oldSalary); // Stara plata
-            psPlata.setDouble(3, newSalary); // Nova plata
-            psPlata.executeUpdate();
-            psPlata.close();
-
-            PreparedStatement psKorisnici = connection.prepareStatement(updateKorisnici);
-            psKorisnici.setString(1, newUsername);
-            psKorisnici.setString(2, newEmail);
-            psKorisnici.setString(3, newRole);
-            psKorisnici.setString(4, newPassword);
-            psKorisnici.setInt(5, id);
-            psKorisnici.executeUpdate();
-
-            PreparedStatement psDetails = connection.prepareStatement(updateDetails);
-            psDetails.setString(1, newFullName);
-            psDetails.setDouble(2, newSalary);
-            psDetails.setInt(3, id);
-            psDetails.executeUpdate();
-
-            psKorisnici.close();
-            psDetails.close();
-
-            JOptionPane.showMessageDialog(panel1, "Korisnik uspješno ažuriran.");
-            loadData();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja korisnika.");
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(panel1, "Plata mora biti broj.");
+        String selectedEmployeeUsername = getSelectedEmployeeName(); // Get the selected employee's username
+        if (selectedEmployeeUsername != null) {
+            new AzuriranjeSuperAdmin(loggedInUsername, selectedEmployeeUsername).showForm();
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
+            frame.dispose();
+        } else {
+            JOptionPane.showMessageDialog(panel1, "Morate odabrati korisnika prvo.");
         }
     }
+
     private void showSalaryHistory(int korisnikId) {
         try {
             String query = "SELECT old_salary, new_salary, change_date FROM historija_plata WHERE korisnik_id = ?";
@@ -421,6 +304,14 @@ public class SuperAdminForm extends ValidityCheck{
             JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
         }
 
+    }
+    private String getSelectedEmployeeName() {
+        int selectedRow = PrikazTabela.getSelectedRow(); // Get the index of the selected row
+        if (selectedRow != -1) { // Ensure a row is selected
+            // Assuming the username is in the first column (index 0)
+            return PrikazTabela.getValueAt(selectedRow, 0).toString(); // Get the value from the first column
+        }
+        return null; // Return null if no row is selected
     }
 
     public void showForm() {

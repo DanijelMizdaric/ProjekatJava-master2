@@ -39,7 +39,7 @@ public class LoginForm {
                         } else if (role.equals("Manager")) {
                             new ManagerForm(username).showForm();
                         } else if (role.equals("SuperAdmin")) {
-                            new SuperAdminForm().showForm();
+                            new SuperAdminForm(username).showForm();
                         } else {
                             JOptionPane.showMessageDialog(panel1, "Nepoznata uloga!");
                         }
