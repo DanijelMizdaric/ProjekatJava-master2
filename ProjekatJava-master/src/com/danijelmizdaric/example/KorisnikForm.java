@@ -13,14 +13,14 @@ public class KorisnikForm {
     private String userRole;
     public KorisnikForm() {
         this.loggedInUsername = UserSession.getUsername();
-        this.userRole=UserSession.getRole();
+        this.userRole=UserSession.getRole(); //pozvana globalna klasa
 
         BackButton.addActionListener(e -> {
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
             if (frame != null) {
-                frame.dispose();
+                frame.dispose(); //zatvaramo formu
             }
-            new LoginForm().showForm();
+            new LoginForm().showForm(); //vraca se na predhodnu formu
         });
 
         prikaziHistorijuPlateButton.addActionListener(e-> showSalaryHistory());
@@ -30,13 +30,13 @@ public class KorisnikForm {
     private void loadUserData() {
         String[] columnNames = {"ID", "Username", "Email", "Role", "Project", "Full Name", "Salary"};
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
-        PrikazInfo.setModel(model);
+        PrikazInfo.setModel(model); //pripremamo tabelu za prikazivajne podataka
         try {
             Connection connection = DriverManager.getConnection(
                     "jdbc:mysql://127.0.0.1:3306/hrms", "root", "Benswolo#1");
             String query = "SELECT k.id, k.username, k.email, k.role, k.project, d.fullName, d.salary " +
                     "FROM korisnici k JOIN korisnik_details d ON k.id = d.korisnik_id " +
-                    "WHERE k.username = ?";
+                    "WHERE k.username = ?"; //uzimamo podatke
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, loggedInUsername);
@@ -50,12 +50,12 @@ public class KorisnikForm {
                 String project = resultSet.getString("project");
                 String fullName = resultSet.getString("fullName");
                 double salary = resultSet.getDouble("salary");
-                model.addRow(new Object[]{id, username, email, role, project, fullName, salary});
+                model.addRow(new Object[]{id, username, email, role, project, fullName, salary}); //stavljamo podatke u tabelu
             }
 
             resultSet.close();
             preparedStatement.close();
-            connection.close();
+            connection.close(); // zatvaranje svih otvorenih konekcija
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja podataka.");
@@ -69,9 +69,9 @@ public class KorisnikForm {
         }
 
         if (loggedInUsername != null) {
-            new PrikazPlata(loggedInUsername, userRole).showForm();
+            new PrikazPlata(loggedInUsername, userRole).showForm(); //otvara novu formu i proslijeđuje ime i ulogu korisnika
         } else {
-            JOptionPane.showMessageDialog(null, "Greška pri dohvaćanju podataka korisnika.");
+            JOptionPane.showMessageDialog(null, "Greška pri dohvatanju podataka korisnika.");
         }
     }
 
