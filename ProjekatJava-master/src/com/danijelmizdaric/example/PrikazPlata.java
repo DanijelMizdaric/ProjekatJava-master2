@@ -13,11 +13,9 @@ public class PrikazPlata {
     private String userRole;
     private Connection connection;
 
-    public PrikazPlata(String username, String employeeRole) {
+    public PrikazPlata(String username, String employeeRole) { //konstruktor specificno za korisnikFormu
         this.loggedInUsername = username;
-
         this.userRole = employeeRole;
-
 
         try {
             connection = DriverManager.getConnection(
@@ -43,7 +41,7 @@ public class PrikazPlata {
         });
     }
 
-    public PrikazPlata(String username, String employeeUsername, String employeeRole){
+    public PrikazPlata(String username, String employeeUsername, String employeeRole){ //Kontruktor za superadmina i managera
         this.loggedInUsername = username;
         this.employeeUsername = employeeUsername;
         this.userRole = employeeRole;
@@ -63,7 +61,7 @@ public class PrikazPlata {
             if (frame != null) {
                 frame.dispose();
             }
-            if ("SuperAdmin".equalsIgnoreCase(userRole)) {
+            if ("SuperAdmin".equalsIgnoreCase(userRole)) { //zavisno od uloge koja je proslijeđena, otvara se ili manager ili superadmin forma
                 SuperAdminForm superAdminForm = new SuperAdminForm(loggedInUsername);
                 superAdminForm.showForm();
             } else if ("Manager".equalsIgnoreCase(userRole)) {
@@ -75,14 +73,14 @@ public class PrikazPlata {
         });
     }
 
-    private void loadSalaryHistory() {
+    private void loadSalaryHistory() { //metoda za dobijanje plata za svakog osim korisnika
         try {
-            String query = "SELECT old_salary, new_salary, change_date FROM historija_plata WHERE korisnik_id = ?";
+            String query = "SELECT old_salary, new_salary, change_date FROM historija_plata WHERE korisnik_id = ?"; //upit da se dobije stara i nova plata iz tabele
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, employeeUsername);
             ResultSet rs = ps.executeQuery();
 
-            DefaultTableModel salaryModel = new DefaultTableModel();
+            DefaultTableModel salaryModel = new DefaultTableModel(); //priprema tabele
             salaryModel.addColumn("Stara plata");
             salaryModel.addColumn("Nova plata");
             salaryModel.addColumn("Datum");
@@ -91,7 +89,7 @@ public class PrikazPlata {
                 salaryModel.addRow(new Object[]{
                         rs.getDouble("old_salary"),
                         rs.getDouble("new_salary"),
-                        rs.getTimestamp("change_date")
+                        rs.getTimestamp("change_date") //upisivanje u tabelu /model
                 });
             }
             table1.setModel(salaryModel);
@@ -104,9 +102,9 @@ public class PrikazPlata {
         }
     }
 
-    private void loadSalaryHistoryKorisnik() {
+    private void loadSalaryHistoryKorisnik() {//metoda za dobijanje plata specificno za korisnika
         try {
-            String idQuery = "SELECT id FROM korisnici WHERE username = ?";
+            String idQuery = "SELECT id FROM korisnici WHERE username = ?"; // upit za dobijanje ID od korisnika
             PreparedStatement idStatement = connection.prepareStatement(idQuery);
             idStatement.setString(1, loggedInUsername);
             ResultSet idResultSet = idStatement.executeQuery();
@@ -117,7 +115,7 @@ public class PrikazPlata {
             }
             int employeeId = idResultSet.getInt("id");
 
-            String query = "SELECT old_salary, new_salary, change_date FROM historija_plata WHERE korisnik_id = ?";
+            String query = "SELECT old_salary, new_salary, change_date FROM historija_plata WHERE korisnik_id = ?"; //dobijaju se podatci koji su povezani s tim ID-om
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setInt(1, employeeId);
             ResultSet rs = ps.executeQuery();
@@ -128,7 +126,7 @@ public class PrikazPlata {
             salaryModel.addColumn("Datum");
 
             while (rs.next()) {
-                salaryModel.addRow(new Object[]{
+                salaryModel.addRow(new Object[]{ //upisivanje u tabelu/model
                         rs.getDouble("old_salary"),
                         rs.getDouble("new_salary"),
                         rs.getTimestamp("change_date")

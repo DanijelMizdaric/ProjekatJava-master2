@@ -78,7 +78,7 @@ public class ManagerForm extends ValidityCheck{
     }
 
     private void addUser() {
-    new UnosZaManagera(loggedInUsername).showForm(); //otvaranje nove forme i proslijedjivanje logovani username
+    new UnosKorisnika(loggedInUsername,userRole).showForm(); //otvaranje nove forme i proslijedjivanje logovani username
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
         frame.dispose();
     }

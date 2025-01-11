@@ -80,7 +80,7 @@ public class SuperAdminForm extends ValidityCheck{
     }
 
     private void addUser() {
-    new UnosZaSuperAdmina(loggedInUsername).showForm();
+    new UnosKorisnika(loggedInUsername,userRole).showForm();
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
         frame.dispose();
     }
@@ -170,7 +170,7 @@ public class SuperAdminForm extends ValidityCheck{
     }
 
     public void showForm() {
-            JFrame frame = new JFrame("Admin Form");
+            JFrame frame = new JFrame("SuperAdmin Form");
             frame.setContentPane(panel1);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(500, 700);
