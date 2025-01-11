@@ -34,7 +34,7 @@ public class PrikaziZalbu {
             if (frame != null) {
                 frame.dispose();
             }
-            if ("SuperAdmin".equalsIgnoreCase(userRole)) {
+            if ("SuperAdmin".equalsIgnoreCase(userRole)) { //zavisno od uloge otvaraju razlicite forme
                 SuperAdminForm superAdminForm = new SuperAdminForm(loggedInUsername);
                 superAdminForm.showForm();
             } else if ("Manager".equalsIgnoreCase(userRole)) {
@@ -48,12 +48,12 @@ public class PrikaziZalbu {
 
     private void loadComplaints() {
         try {
-            String query = "SELECT id, complaint_text, complaint_date, status FROM korisnik_zalbe WHERE korisnik_id = ?";
+            String query = "SELECT id, complaint_text, complaint_date, status FROM korisnik_zalbe WHERE korisnik_id = ?"; //upit gdje se uzimaju podaci o zalbama
             PreparedStatement psComplaints = connection.prepareStatement(query);
             psComplaints.setString(1, employeeUsername);
             ResultSet rs = psComplaints.executeQuery();
 
-            DefaultTableModel complaintModel = new DefaultTableModel();
+            DefaultTableModel complaintModel = new DefaultTableModel();//priprema tabele
             complaintModel.addColumn("ID");
             complaintModel.addColumn("Žalba");
             complaintModel.addColumn("Datum");
@@ -63,7 +63,7 @@ public class PrikaziZalbu {
                         rs.getInt("id"),
                         rs.getString("complaint_text"),
                         rs.getDate("complaint_date"),
-                        rs.getString("status")
+                        rs.getString("status")//upis u tabelu
                 });
             }
             table1.setModel(complaintModel);
@@ -88,11 +88,11 @@ public class PrikaziZalbu {
             PreparedStatement psUpdate = connection.prepareStatement(updateQuery);
             psUpdate.setString(1, "završeno");
             psUpdate.setInt(2, complaintId);
-            int rowsUpdated = psUpdate.executeUpdate();
+            int rowsUpdated = psUpdate.executeUpdate();//selektovanu žalbu određujemo da je završena
 
             if (rowsUpdated > 0) {
                 JOptionPane.showMessageDialog(panel1, "Status žalbe je uspješno ažuriran na 'završeno'.");
-                loadComplaints();
+                loadComplaints();// refresh
             } else {
                 JOptionPane.showMessageDialog(panel1, "Greška prilikom ažuriranja statusa žalbe.");
             }

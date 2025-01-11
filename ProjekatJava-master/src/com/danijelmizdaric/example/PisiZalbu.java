@@ -32,7 +32,7 @@ public class PisiZalbu {
             if (frame != null) {
                 frame.dispose();
             }
-            if ("SuperAdmin".equalsIgnoreCase(userRole)) {
+            if ("SuperAdmin".equalsIgnoreCase(userRole)) {//otvara formu zavisno od loggovanog usera
                 SuperAdminForm superAdminForm = new SuperAdminForm(loggedInUsername);
                 superAdminForm.showForm();
             } else if ("Manager".equalsIgnoreCase(userRole)) {
@@ -49,14 +49,14 @@ public class PisiZalbu {
         if (complaintText != null && !complaintText.isEmpty()) {
             try {
                 String insertComplaint = "INSERT INTO korisnik_zalbe " +
-                        "(korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";
+                        "(korisnik_id, complaint_text, complaint_date, status) VALUES (?, ?, ?, ?)";//upit za pisanje zalbe u bazu
 
                 PreparedStatement psComplaint = connection.prepareStatement(insertComplaint);
                 psComplaint.setInt(1, Integer.parseInt(employeeUsername));
                 psComplaint.setString(2, complaintText);
                 psComplaint.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
                 psComplaint.setString(4, "u obradi");
-                psComplaint.executeUpdate();
+                psComplaint.executeUpdate();//pisanje zalbe
                 psComplaint.close();
 
                 JOptionPane.showMessageDialog(panel1, "Žalba uspješno dodana.");
@@ -70,7 +70,7 @@ public class PisiZalbu {
     }
 
     public void showForm() {
-        JFrame frame = new JFrame("Pisi Zalbu Manager");
+        JFrame frame = new JFrame("Pisi Zalbu");
         frame.setContentPane(panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 400);

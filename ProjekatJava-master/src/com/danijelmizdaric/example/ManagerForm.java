@@ -21,7 +21,7 @@ public class ManagerForm extends ValidityCheck{
     public ManagerForm(String username){
         this.loggedInUsername = username;
         this.userRole = UserSession.getRole();
-        tableModel = new DefaultTableModel(new String[]{"ID", "Username", "Email", "Role", "Full Name", "Salary"}, 0);
+        tableModel = new DefaultTableModel(new String[]{"ID", "Username", "Email", "Role", "Full Name", "Salary"}, 0); //odmah na pocetku pripremamo tabelu za prikaz podataka
         PrikazTabela.setModel(tableModel);
         loadData();
 
@@ -52,7 +52,7 @@ public class ManagerForm extends ValidityCheck{
             String query = "SELECT k.id, k.username, k.email, k.role, d.fullName, d.salary " +
                     "FROM korisnici k " +
                     "JOIN korisnik_details d ON k.id = d.korisnik_id " +
-                    "WHERE k.role = 'employee' AND k.project = (SELECT project FROM korisnici WHERE username = ? AND role = 'manager')";
+                    "WHERE k.role = 'employee' AND k.project = (SELECT project FROM korisnici WHERE username = ? AND role = 'manager')"; // uzimanje podataka o korisnicima iz baze
 
             PreparedStatement ps = connection.prepareStatement(query);
             ps.setString(1, loggedInUsername);
@@ -66,11 +66,11 @@ public class ManagerForm extends ValidityCheck{
                 String role = resultSet.getString("role");
                 String fullName = resultSet.getString("fullName");
                 double salary = resultSet.getDouble("salary");
-                tableModel.addRow(new Object[]{id, username, email, role, fullName, salary});
+                tableModel.addRow(new Object[]{id, username, email, role, fullName, salary}); //pisanje podataka u tabelu
             }
 
             resultSet.close();
-            ps.close();
+            ps.close(); //zatvaranje konekcija
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom učitavanja podataka.");
@@ -78,7 +78,7 @@ public class ManagerForm extends ValidityCheck{
     }
 
     private void addUser() {
-    new UnosZaManagera(loggedInUsername).showForm();
+    new UnosKorisnika(loggedInUsername,userRole).showForm(); //otvaranje nove forme i proslijedjivanje logovani username
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
         frame.dispose();
     }
@@ -90,16 +90,16 @@ public class ManagerForm extends ValidityCheck{
             return;
         }
 
-        int id = (int) tableModel.getValueAt(selectedRow, 0);
+        int id = (int) tableModel.getValueAt(selectedRow, 0); //uzme vrijednost selektovanog reda u tabeli
         try {
             String deleteDetails = "DELETE FROM korisnik_details WHERE korisnik_id = ?";
             String deleteZalbe = "DELETE FROM korisnik_zalbe WHERE korisnik_id = ?";
-            String deleteKorisnici = "DELETE FROM korisnici WHERE id = ?";
+            String deleteKorisnici = "DELETE FROM korisnici WHERE id = ?"; //upit za brisanje podataka o korisniku iz baze
 
             PreparedStatement psDetails = connection.prepareStatement(deleteDetails);
             psDetails.setInt(1, id);
-            psDetails.executeUpdate();
-            psDetails.close();
+            psDetails.executeUpdate();//izvrsavanje upita
+            psDetails.close();//zatvaranje konekcije
 
             PreparedStatement psZalbe = connection.prepareStatement(deleteZalbe);
             psZalbe.setInt(1, id);
@@ -112,7 +112,7 @@ public class ManagerForm extends ValidityCheck{
             psKorisnici.close();
 
             JOptionPane.showMessageDialog(panel1, "Korisnik je uspješno izbrisan.");
-            loadData();
+            loadData(); //refresh
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(panel1, "Greška prilikom brisanja korisnika.");
@@ -122,7 +122,7 @@ public class ManagerForm extends ValidityCheck{
     private void updateUser() {
         String selectedEmployeeUsername = getSelectedEmployeeName();
         if (selectedEmployeeUsername != null) {
-            new AzuriranjeManager(loggedInUsername, selectedEmployeeUsername).showForm();
+            new AzuriranjeManager(loggedInUsername, selectedEmployeeUsername).showForm(); //otvaranje forme, proslijedjivanje manager username i selektovanog radnika
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
             frame.dispose();
         } else {
@@ -134,7 +134,7 @@ public class ManagerForm extends ValidityCheck{
     private void writeComplaint(){
         String selectedEmployeeUsername = getSelectedEmployeeName();
         if (selectedEmployeeUsername!=null) {
-            new PisiZalbu(loggedInUsername, selectedEmployeeUsername,userRole).showForm();
+            new PisiZalbu(loggedInUsername, selectedEmployeeUsername,userRole).showForm(); //otvaranje forme, proslijedjivanje username i uloge logovanog radnika, kao i selektovanog radnika
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
             frame.dispose();
         }else {
@@ -167,14 +167,14 @@ public class ManagerForm extends ValidityCheck{
     private String getSelectedEmployeeName() {
         int selectedRow = PrikazTabela.getSelectedRow();
         if (selectedRow != -1) {
-            return PrikazTabela.getValueAt(selectedRow, 0).toString();
+            return PrikazTabela.getValueAt(selectedRow, 0).toString(); // vraca vrijednost trenutno selektovanog radnika
         }
         return null;
     }
 
 
     public void showForm() {
-        JFrame frame = new JFrame("Admin Form");
+        JFrame frame = new JFrame("Manager Form");
         frame.setContentPane(panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 700);

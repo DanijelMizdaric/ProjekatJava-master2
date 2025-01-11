@@ -5,7 +5,7 @@ import java.sql.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
 
-public class UnosZaManagera extends ValidityCheck{
+public class UnosKorisnika extends ValidityCheck{
     private JTextField textField1;
     private JTextField textField2;
     private JTextField textField3;
@@ -18,9 +18,11 @@ public class UnosZaManagera extends ValidityCheck{
     private JPanel panel1;
     private Connection connection;
     private String loggedInUsername;
+    private String userRole;
 
-    public UnosZaManagera(String username) {
+    public UnosKorisnika(String username, String employeeRole) {
         this.loggedInUsername=username;
+        this.userRole=employeeRole;
         try {
             connection = DriverManager.getConnection(
                     "jdbc:mysql://127.0.0.1:3306/hrms", "root", "Benswolo#1");
@@ -38,9 +40,16 @@ public class UnosZaManagera extends ValidityCheck{
             }
 
             String Username = loggedInUsername;
-            ManagerForm managerForm = new ManagerForm(Username);
-            managerForm.showForm();
-        });
+            String EmRole = userRole;
+            if ("Manager".equalsIgnoreCase(userRole)) { //otvara razlicite forme zavisno od uloge korisnika
+                ManagerForm managerForm = new ManagerForm(Username);
+                managerForm.showForm();
+            } else if ("SuperAdmin".equalsIgnoreCase(userRole)){
+                SuperAdminForm superAdminForm = new SuperAdminForm(Username);
+                superAdminForm.showForm();
+            } else {
+                JOptionPane.showMessageDialog(null, "Nepoznata uloga");
+            }});
     }
 
     private void addUser() {
@@ -50,10 +59,10 @@ public class UnosZaManagera extends ValidityCheck{
         String password = new String(passwordField1.getPassword());
         String role = textField4.getText();
         String fullName = textField5.getText();
-        String salaryStr = textField6.getText();
+        String salaryStr = textField6.getText();//uzimamo text sa gui-a
 
         if (!isRoleValid(role)) {
-            JOptionPane.showMessageDialog(panel1, "Unesena uloga nije validna.");
+            JOptionPane.showMessageDialog(panel1, "Unesena uloga nije validna."); //validacija
             return;
         }
         if (!isEmailValid(email)) {
@@ -66,7 +75,7 @@ public class UnosZaManagera extends ValidityCheck{
             double salary = number.doubleValue();
 
             String insertKorisnici = "INSERT INTO korisnici (username, email, password, role, project) VALUES (?, ?, ?, ?, ?)";
-            String insertDetails = "INSERT INTO korisnik_details (korisnik_id, fullName, salary) VALUES (LAST_INSERT_ID(), ?, ?)";
+            String insertDetails = "INSERT INTO korisnik_details (korisnik_id, fullName, salary) VALUES (LAST_INSERT_ID(), ?, ?)"; //upit sa pisanje u tabelu korisnici i korisnik_details
 
             PreparedStatement psKorisnici = connection.prepareStatement(insertKorisnici);
             psKorisnici.setString(1, username);
@@ -79,7 +88,7 @@ public class UnosZaManagera extends ValidityCheck{
             PreparedStatement psDetails = connection.prepareStatement(insertDetails);
             psDetails.setString(1, fullName);
             psDetails.setDouble(2, salary);
-            psDetails.executeUpdate();
+            psDetails.executeUpdate(); //pisanje u tabele
 
             psKorisnici.close();
             psDetails.close();
@@ -93,7 +102,7 @@ public class UnosZaManagera extends ValidityCheck{
     }
 
     public void showForm() {
-        JFrame frame = new JFrame("Unos Za Managera");
+        JFrame frame = new JFrame("UnosKorisnika");
         frame.setContentPane(panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 700);

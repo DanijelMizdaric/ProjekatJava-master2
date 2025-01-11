@@ -48,7 +48,7 @@ public class AzuriranjeManager extends ValidityCheck {
         String query = "SELECT username, email, project, role, fullName, salary " +
                 "FROM korisnici " +
                 "JOIN korisnik_details ON korisnici.id = korisnik_details.korisnik_id " +
-                "WHERE korisnici.id = ?";
+                "WHERE korisnici.id = ?";//upit za dohvatanje podataka iz baze
 
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, Integer.parseInt(employeeUsername));
@@ -60,8 +60,8 @@ public class AzuriranjeManager extends ValidityCheck {
                 textField3.setText(resultSet.getString("project"));
                 textField4.setText(resultSet.getString("role"));
                 textField5.setText(resultSet.getString("fullName"));
-                textField6.setText(String.valueOf(resultSet.getDouble("salary")));
-                oldSalary = resultSet.getDouble("salary");
+                textField6.setText(String.valueOf(resultSet.getDouble("salary"))); // upisivanje podataka unutar textfieldove
+                oldSalary = resultSet.getDouble("salary");//spremanje trenutne plate u varijablue, u slucaju da ce se promjenit plata
             } else {
                 System.out.println("Podaci nisu pronadjeni.");
             }
@@ -78,7 +78,7 @@ public class AzuriranjeManager extends ValidityCheck {
         String project = textField3.getText();
         String role = textField4.getText();
         String fullName = textField5.getText();
-        String salaryStr = textField6.getText();
+        String salaryStr = textField6.getText(); //uzimanje texta iz textfield
 
         if (!isRoleValid(role)) {
             JOptionPane.showMessageDialog(panel1, "Unesena uloga nije validna.");
@@ -96,7 +96,7 @@ public class AzuriranjeManager extends ValidityCheck {
             String updateEmployee = "UPDATE korisnici SET email = ?, project = ?, role = ? WHERE username = ?";
             String updateDetails = "UPDATE korisnik_details SET fullName = ?, salary = ? WHERE korisnik_id = (SELECT id FROM korisnici WHERE username = ?)";
             String insertSalaryHistory = "INSERT INTO historija_plata (korisnik_id, old_salary, new_salary, change_date) " +
-                    "VALUES ((SELECT id FROM korisnici WHERE username = ?), ?, ?, ?)";
+                    "VALUES ((SELECT id FROM korisnici WHERE username = ?), ?, ?, ?)"; //upit za azuriranje tabela unutar baze, ukljucujuci i historija_plata
 
             PreparedStatement psEmployee = connection.prepareStatement(updateEmployee);
             psEmployee.setString(1, email);
@@ -114,8 +114,8 @@ public class AzuriranjeManager extends ValidityCheck {
             PreparedStatement psSalaryHistory = connection.prepareStatement(insertSalaryHistory);
             psSalaryHistory.setString(1, username);
             psSalaryHistory.setDouble(2, oldSalary);
-            psSalaryHistory.setDouble(3, salary);
-            psSalaryHistory.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            psSalaryHistory.setDouble(3, salary);//upisivanje podataka
+            psSalaryHistory.setTimestamp(4, new Timestamp(System.currentTimeMillis())); //upisivanje trenutnog vremena
             psSalaryHistory.executeUpdate();
 
             psEmployee.close();
