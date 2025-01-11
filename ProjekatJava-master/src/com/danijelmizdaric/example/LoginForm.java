@@ -1,4 +1,4 @@
-package Projekt;
+package com.danijelmizdaric.example;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -30,20 +30,19 @@ public class LoginForm {
                     if (resultSet.next()) {
                         String role = resultSet.getString("role");
                         JOptionPane.showMessageDialog(panel1, "Uspješan login!");
-
+                        UserSession.setUserDetails(username, role);
                         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(panel1);
                         frame.dispose();
 
                         if (role.equals("Employee")) {
-                            new KorisnikForm(username).showForm();
+                            new KorisnikForm().showForm();
                         } else if (role.equals("Manager")) {
-                            new ManagerForm().showForm();
+                            new ManagerForm(username).showForm(); // No need to pass role here
                         } else if (role.equals("SuperAdmin")) {
-                            new SuperAdminForm().showForm();
+                            new SuperAdminForm(username).showForm();
                         } else {
                             JOptionPane.showMessageDialog(panel1, "Nepoznata uloga!");
                         }
-
                     } else {
                         JOptionPane.showMessageDialog(panel1, "Neispravan username ili password!");
                     }
@@ -53,9 +52,7 @@ public class LoginForm {
                     connection.close();
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(panel1, "Greška prilikom povezivanja sa bazom: " + ex.getMessage());
-
                 }
-
             }
         });
     }
@@ -69,7 +66,6 @@ public class LoginForm {
     }
 
     public static void main(String[] args) {
-
         new LoginForm().showForm();
     }
 }

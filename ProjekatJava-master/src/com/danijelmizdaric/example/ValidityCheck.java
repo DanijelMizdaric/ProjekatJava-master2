@@ -1,7 +1,6 @@
-package Projekt;
+package com.danijelmizdaric.example;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class ValidityCheck {
@@ -12,7 +11,6 @@ public class ValidityCheck {
                 role.equalsIgnoreCase("Manager");
     }
 
-    // Proverava da li je uneseni e-mail u ispravnom formatu
     protected boolean isEmailValid(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
         return email.matches(emailRegex);
